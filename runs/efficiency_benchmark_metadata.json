@@ -1,0 +1,61 @@
+{
+  "benchmark": "single-process synthetic-data training-step microbenchmark",
+  "model": "torchvision ResNet18 with CIFAR stem",
+  "noise": {
+    "prog_noise_std": 0.01,
+    "drift_factor": 0.005,
+    "nonlinear_alpha": 0.1,
+    "nonlinear_beta": 0.05,
+    "output_noise_std": 0.01,
+    "quantization_bits": null,
+    "crosstalk_factor": 0.002,
+    "temperature_factor": 0.001,
+    "retention_loss": 0.001,
+    "supply_variation_std": 0.01,
+    "gradient_floor": 0.1,
+    "gradient_scale_eps": 1e-06,
+    "gradient_scale_clip": 4.0
+  },
+  "arguments": {
+    "device": "cuda",
+    "batch_size": 8,
+    "image_size": 32,
+    "num_classes": 10,
+    "warmup_steps": 10,
+    "steps": 50,
+    "learning_rate": 0.01,
+    "seed": 2026,
+    "modes": [
+      "clean",
+      "ste",
+      "online_profile"
+    ],
+    "output": "/home/kylinsu/worksapce/imc_ste_challenge/runs/efficiency_benchmark.csv",
+    "figure": "/home/kylinsu/worksapce/imc_ste_challenge/docs/figures/efficiency_benchmark.png",
+    "metadata_output": "/home/kylinsu/worksapce/imc_ste_challenge/runs/efficiency_benchmark_metadata.json"
+  },
+  "environment": {
+    "python": "3.10.20",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+    "torch": "2.6.0",
+    "torchvision": "0.21.0",
+    "cuda_available": true,
+    "device": "cuda",
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "cuda_runtime": "12.6"
+  },
+  "online_profile": {
+    "layers": 21,
+    "initialized_layers": 21,
+    "matched_calls": 1260,
+    "shape_mismatches": 0,
+    "skipped_calls": 0,
+    "scale_mean": 0.8748955130577087,
+    "scale_min": 0.7170193791389465,
+    "scale_max": 0.9985566139221191,
+    "floor_fraction": 0.0,
+    "stochastic_ratio_mean": 0.5567397702307928,
+    "bias_ratio_mean": 0.2203877465355964
+  },
+  "interpretation": "Step-level dispersion is not an independent-run confidence interval. Online profile includes its paired clean forward and profile reductions."
+}

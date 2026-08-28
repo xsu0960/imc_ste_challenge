@@ -1,0 +1,9 @@
+task,clean_eval,direct_uniform_noisy,best_uniform_ste,best_uniform_protocol,recovery_pp,retained_clean_ratio,notes
+CIFAR-10 + ResNet18,0.9562,0.61420,0.90626,ste_lr0p001_twostage,29.206,0.9478,strict uniform noise_scale=1.0; no layer-wise noise reduction
+CIFAR-10 + EfficientNet-B0,0.9113,0.38930,0.86122,sat_aware_ste_twostage,47.192,0.9450,strict uniform noise_scale=1.0; calibrated 90.58% result moved to auxiliary
+CIFAR-100 + ResNet18,0.7832,0.62976,0.69960,adaptive_sat_aware_ste_lr0p001_twostage,6.984,0.8933,strict uniform noise_scale=1.0
+CIFAR-100 + EfficientNet-B0,0.7114,0.27764,0.61602,ste_lr0p001_twostage,33.838,0.8660,strict uniform noise_scale=1.0
+TinyImageNet + ResNet18 ImageNet-224,0.7160,0.53833,0.58070,sat_aware_ste_lr0p0005_10ep300b,4.237,0.8110,strict uniform noise_scale=1.0
+TinyImageNet + EfficientNet-B0 ImageNet-224,0.8100,0.00500,0.76304,activation_preconditioned_ste_pw_dw_read8_5seed_mean,75.804,0.9420,strict uniform noise_scale=1.0; 5-noise-seed full-val mean with CI95=0.00247; clean-stat activation preconditioning target=4; pointwise/depthwise read4 training and read8 eval; no layer-wise noise reduction
+VOC2007 + Faster R-CNN,0.7258625105,0.2871968508,0.3753279768,shared_read_sat_aware_ste_1epoch_fullval,8.813113,0.517079,strict internal uniform noise_scale=1.0; shared-read corrected full-val; legacy per-chunk result retained in optional_conv_noise_state_study.csv
+VOC2012 + DeepLabV3,0.7130971285,0.0402971337,0.0645705608,shared_read_sat_aware_ste_1epoch_fullval,2.427343,0.090549,strict internal uniform noise_scale=1.0; shared-read corrected full-val; legacy per-chunk result retained in optional_conv_noise_state_study.csv

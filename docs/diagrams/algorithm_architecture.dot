@@ -1,0 +1,157 @@
+digraph ArchitectureAwareIMCSTE {
+  graph [
+    rankdir=TB,
+    bgcolor="white",
+    pad=0.28,
+    nodesep=0.34,
+    ranksep=0.58,
+    splines=polyline,
+    newrank=true,
+    compound=true,
+    fontname="Helvetica",
+    fontsize=18,
+    labelloc="t",
+    label="Architecture-Aware IMC-STE: System Architecture"
+  ];
+
+  node [
+    shape=box,
+    style="rounded,filled",
+    color="#334155",
+    fillcolor="#F8FAFC",
+    fontname="Helvetica",
+    fontsize=10,
+    margin="0.13,0.09"
+  ];
+  edge [
+    color="#475569",
+    fontcolor="#334155",
+    fontname="Helvetica",
+    fontsize=8.5,
+    arrowsize=0.72,
+    penwidth=1.25
+  ];
+
+  subgraph cluster_inputs {
+    label="Inputs";
+    color="#94A3B8";
+    fillcolor="#F8FAFC";
+    style="rounded,filled";
+
+    clean_model [label="Clean checkpoint\nConv2d / Linear network", fillcolor="#E2E8F0"];
+    noise_config [label="Full-strength IMC\nnoise configuration", fillcolor="#E2E8F0"];
+    calibration [label="Calibration batches\nand repeated noisy reads", fillcolor="#E2E8F0"];
+    { rank=same; clean_model; noise_config; calibration; }
+  }
+
+  subgraph cluster_setup {
+    label="Architecture analysis and statistics";
+    color="#3B82F6";
+    fillcolor="#EFF6FF";
+    style="rounded,filled";
+
+    convert [label="Recursive layer conversion\nNoisyConv2d / NoisyLinear", fillcolor="#DBEAFE"];
+    classify [label="Automatic operator typing\nregular | depthwise | pointwise | linear", fillcolor="#DBEAFE"];
+    profile [
+      label="Layer profiling\nclean |MAC| P99: q_l\nstochastic ratio: r_v,l\nsystematic ratio: r_b,l",
+      fillcolor="#DBEAFE"
+    ];
+    policy [
+      label="Per-layer policy\nactivation scale a_l\nread budget K_l\nconfidence c_l and channel scale d_l",
+      fillcolor="#BFDBFE"
+    ];
+    { rank=same; convert; classify; profile; policy; }
+  }
+
+  subgraph cluster_forward {
+    label="Noisy forward path (one converted layer)";
+    color="#16A34A";
+    fillcolor="#F0FDF4";
+    style="rounded,filled";
+
+    input [label="Layer input X_l", fillcolor="#DCFCE7"];
+    precondition [label="Activation preconditioning\na_l X_l", fillcolor="#DCFCE7"];
+    weights [label="Trainable weights W_l", fillcolor="#DCFCE7"];
+    saved [label="Save X_l, W_l, Z_l = X_l W_l\nfor the surrogate backward", fillcolor="#ECFCCB"];
+    noisy_operator [
+      shape=plain,
+      label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" COLOR="#15803D" BGCOLOR="#DCFCE7">
+          <TR><TD><B>Full noisy IMC operator N_phi</B></TD></TR>
+          <TR><TD ALIGN="LEFT">1. programming + drift + retention + temperature</TD></TR>
+          <TR><TD ALIGN="LEFT">2. input crosstalk and grouped/unfolded MAC</TD></TR>
+          <TR><TD ALIGN="LEFT">3. asymmetric nonlinear saturation</TD></TR>
+          <TR><TD ALIGN="LEFT">4. ADC quantization</TD></TR>
+          <TR><TD ALIGN="LEFT">5. output/correlated noise + supply variation</TD></TR>
+        </TABLE>
+      >
+    ];
+    reads [label="K_l physical reads\nexact average (evaluation)\nor moment-matched training", fillcolor="#BBF7D0"];
+    restore [label="Inverse scale and bias\nY_tilde_l = mean(Y_l) / a_l + b_l", fillcolor="#DCFCE7"];
+    network [label="Remaining network\nand task loss L", fillcolor="#DCFCE7"];
+    { rank=same; input; precondition; weights; saved; }
+    { rank=same; noisy_operator; reads; restore; network; }
+  }
+
+  subgraph cluster_backward {
+    label="Architecture-aware surrogate backward";
+    color="#D97706";
+    fillcolor="#FFFBEB";
+    style="rounded,filled";
+
+    upstream [label="Upstream gradient G_l", fillcolor="#FEF3C7"];
+    saturation [label="Saturation gate S(Z_l)\nfixed or adaptive normalization", fillcolor="#FDE68A"];
+    confidence [label="Noise confidence c_l\nand channel scale d_l", fillcolor="#FDE68A"];
+    jacobian [
+      label="Ideal local Jacobian\ndX_l = G_hat_l W_l^T\ndW_l = X_l^T G_hat_l",
+      fillcolor="#FEF3C7"
+    ];
+    optimizer [label="Gradient clipping + optimizer\nupdate clean master weights", fillcolor="#FED7AA"];
+    { rank=same; upstream; saturation; confidence; jacobian; optimizer; }
+  }
+
+  clean_model -> convert;
+  noise_config -> convert [style=dashed, label="phi"];
+  convert -> classify;
+  convert -> profile [style=dashed];
+  calibration -> profile [style=dashed, color="#2563EB"];
+  noise_config -> profile [style=dashed, color="#2563EB"];
+  classify -> policy [style=dashed];
+  profile -> policy [style=dashed, color="#2563EB"];
+
+  convert -> input [label="converted graph"];
+  input -> precondition [color="#15803D", weight=20];
+  precondition -> noisy_operator [color="#15803D", weight=20];
+  weights -> noisy_operator [color="#15803D"];
+  precondition -> saved [style=dashed, color="#65A30D"];
+  weights -> saved [style=dashed, color="#65A30D"];
+  noise_config -> noisy_operator [style=dashed, color="#2563EB", label="phi", constraint=false];
+  noisy_operator -> reads [color="#15803D", weight=30];
+  reads -> restore [color="#15803D", weight=30];
+  restore -> network [color="#15803D", weight=30];
+
+  policy -> precondition [style=dashed, color="#2563EB", label="a_l", constraint=false];
+  policy -> reads [style=dashed, color="#2563EB", label="K_l", constraint=false];
+  policy -> confidence [style=dashed, color="#2563EB", label="c_l, d_l", constraint=false];
+
+  network -> upstream [color="#B45309", label="backprop"];
+  upstream -> saturation [color="#B45309", weight=30];
+  saved -> saturation [style=dashed, color="#B45309", label="Z_l", constraint=false];
+  saturation -> confidence [color="#B45309", weight=30];
+  confidence -> jacobian [color="#B45309", label="G_hat_l", weight=30];
+  saved -> jacobian [style=dashed, color="#B45309", label="X_l, W_l", constraint=false];
+  jacobian -> optimizer [color="#B45309", weight=30];
+  optimizer -> weights [color="#7C3AED", style=dashed, label="update", constraint=false];
+
+  legend [
+    shape=plain,
+    label=<
+      <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="2" CELLPADDING="2">
+        <TR><TD><FONT COLOR="#15803D">solid green</FONT></TD><TD ALIGN="LEFT">forward tensors</TD></TR>
+        <TR><TD><FONT COLOR="#B45309">solid amber</FONT></TD><TD ALIGN="LEFT">surrogate gradients</TD></TR>
+        <TR><TD><FONT COLOR="#2563EB">dashed blue</FONT></TD><TD ALIGN="LEFT">statistics and policy</TD></TR>
+      </TABLE>
+    >
+  ];
+  { rank=same; legend; upstream; }
+}

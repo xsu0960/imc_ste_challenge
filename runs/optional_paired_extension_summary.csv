@@ -1,0 +1,4 @@
+family,runs,metric,control_mean_percent,candidate_mean_percent,paired_delta_mean_pp,paired_delta_ci95_pp,paired_p_value,positive_seeds,conclusion
+detection_online_profile,3,mAP50,40.43761493948599,41.784614051381745,1.3469991118957598,3.948551248215861,0.2798710113033601,2,not_significant
+detection_proposal_aligned,3,mAP50,39.39894879857699,40.05030276874701,0.6513539701700211,5.273728446763981,0.6482457811593598,2,not_significant
+segmentation_online_consistency_range,3,mIoU,6.4991798859780285,6.744601077466981,0.24542119148895214,0.09871614189202048,0.008626439085214951,3,significant

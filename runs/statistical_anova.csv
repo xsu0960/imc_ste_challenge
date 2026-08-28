@@ -1,0 +1,8 @@
+task_key,task,groups,observations,anova_f,anova_p,significance,eta_squared,protocols
+cifar100_efficientnet_b0,CIFAR-100 + EfficientNet-B0,5,25,6815.513095463512,4.927569180015694e-31,***,0.9992669173227849,adaptive_sat_aware_ste_lr0p001;clean120;noise_lr0p001;sat_aware_ste_lr0p001;ste_lr0p001
+cifar100_resnet18,CIFAR-100 + ResNet18,7,35,257.4785236388722,3.725094824407633e-23,***,0.9821981602591011,adaptive_sat_aware_ste_earlybest;adaptive_sat_aware_ste_lr0p001;clean120;noise_lr0p001;sat_aware_ste;sat_aware_ste_lr0p001;ste_lr0p001
+cifar10_efficientnet_b0,CIFAR-10 + EfficientNet-B0,11,55,47126.76490274985,3.293556476087521e-85,***,0.9999066435126507,adaptive_sat_aware_ste;clean120;dw_clean_sat_aware_ste_pw0p25_100b;dwclean_clean120;dwclean_sat_aware_ste_lr0p001__dw_clean_sat_aware_ste;imagenet_clean40;imagenet_dwclean_clean40;layerwise_best_eval;noise_lr0p001;sat_aware_ste;ste_lr0p001
+cifar10_resnet18,CIFAR-10 + ResNet18,6,30,1394.6869699328126,9.565268776937309e-29,***,0.9965701717106877,adaptive_sat_aware_ste;clean120;noise_lr0p001;sat120__sat_aware_ste;ste_lr0p001;twostage_sat__sat_aware_ste
+tinyimagenet_efficientnet_b0_imagenet224,TinyImageNet + EfficientNet-B0 ImageNet-224,4,14,72966.36540538906,5.384755184720364e-22,***,0.9999543189379849,clean10;clean10_dwclean;dwclean_pw0p05_lin0p1;ste_uniform_lr0p0005_10ep300b
+tinyimagenet_resnet18,TinyImageNet + ResNet18,3,9,8.900200980786218,0.01602141520517082,*,0.7479034173587705,clean20_300b;sat_aware_ste_tiny_pilot_100b;ste_tiny_pilot_100b
+tinyimagenet_resnet18_imagenet224,TinyImageNet + ResNet18 ImageNet-224,3,9,104.61140548416985,2.1666504592805225e-05,***,0.972121914154895,clean15;sat_aware_ste_5ep300b;sat_aware_ste_lr0p0005_10ep300b

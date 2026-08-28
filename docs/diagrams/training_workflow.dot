@@ -1,0 +1,133 @@
+digraph IMCSTEWorkflow {
+  graph [
+    rankdir=TB,
+    bgcolor="white",
+    pad=0.28,
+    nodesep=0.28,
+    ranksep=0.42,
+    splines=polyline,
+    fontname="Helvetica",
+    fontsize=18,
+    labelloc="t",
+    label="Architecture-Aware IMC-STE: End-to-End Workflow"
+  ];
+
+  node [
+    shape=box,
+    style="rounded,filled",
+    color="#334155",
+    fillcolor="#F8FAFC",
+    fontname="Helvetica",
+    fontsize=10,
+    margin="0.15,0.09"
+  ];
+  edge [
+    color="#475569",
+    fontcolor="#334155",
+    fontname="Helvetica",
+    fontsize=8.5,
+    arrowsize=0.72,
+    penwidth=1.25
+  ];
+
+  start [shape=ellipse, label="Start", fillcolor="#E2E8F0"];
+
+  subgraph cluster_prepare {
+    label="Stage A: prepare and calibrate";
+    color="#3B82F6";
+    fillcolor="#EFF6FF";
+    style="rounded,filled";
+
+    load [label="Load clean checkpoint, dataset,\nand strict full-noise configuration", fillcolor="#DBEAFE"];
+    convert [label="Recursively replace Conv2d / Linear\nwith noisy layers and copy weights", fillcolor="#DBEAFE"];
+    classify [label="Classify regular, depthwise,\npointwise, and linear operators", fillcolor="#DBEAFE"];
+    calibrate [label="Run clean + repeated noisy calibration\ncollect q_l, r_v,l, r_b,l, and channel statistics", fillcolor="#BFDBFE"];
+    assign [label="Freeze per-layer policy\na_l, K_l, STE strategy, c_l, d_l", fillcolor="#BFDBFE"];
+  }
+
+  subgraph cluster_train {
+    label="Stage B: robust noisy training";
+    color="#16A34A";
+    fillcolor="#F0FDF4";
+    style="rounded,filled";
+
+    batch [label="Sample mini-batch (x, y)", fillcolor="#DCFCE7"];
+    forward [
+      label="Noisy forward\nprecondition -> full N_phi -> K_train reads\n-> inverse scale -> prediction",
+      fillcolor="#BBF7D0"
+    ];
+    online [
+      label="Optional online profile\npaired clean/noisy forward + EMA\nupdates bounded channel confidence",
+      fillcolor="#ECFCCB",
+      style="rounded,dashed,filled"
+    ];
+    loss [label="Task loss + bounded scale regularizer", fillcolor="#DCFCE7"];
+    backward [
+      label="Custom STE backward\nsaturation gate -> variance/bias confidence\n-> channel scale -> ideal Jacobian",
+      fillcolor="#FEF3C7",
+      color="#D97706"
+    ];
+    finite [shape=diamond, label="Finite loss\nand gradients?", fillcolor="#FDE68A", color="#D97706"];
+    stopbad [label="Stop and record failure", fillcolor="#FEE2E2", color="#DC2626"];
+    update [label="Clip gradients and update\nclean master weights", fillcolor="#FED7AA", color="#D97706"];
+    more [shape=diamond, label="More batches\nor epochs?", fillcolor="#E2E8F0"];
+  }
+
+  subgraph cluster_evaluate {
+    label="Stage C: strict evaluation and selection";
+    color="#7C3AED";
+    fillcolor="#FAF5FF";
+    style="rounded,filled";
+
+    checkpoint [label="Save checkpoint and full configuration", fillcolor="#EDE9FE"];
+    evaluate [
+      label="Exact full-noise evaluation\nK_eval independent physical reads\nfull validation set and repeated seeds",
+      fillcolor="#DDD6FE"
+    ];
+    aggregate [label="Aggregate mean, standard deviation,\n95% CI, recovery, and clean gap", fillcolor="#EDE9FE"];
+    diagnose [shape=diamond, label="Accuracy and\nstability acceptable?", fillcolor="#EDE9FE"];
+    revise [label="Inspect layer bias/variance and saturation\nrevise estimator or bounded read policy", fillcolor="#FCE7F3", color="#BE185D"];
+  }
+
+  subgraph cluster_deploy {
+    label="Stage D: deployment";
+    color="#0F766E";
+    fillcolor="#F0FDFA";
+    style="rounded,filled";
+
+    freeze [label="Freeze weights, scales, and read policy", fillcolor="#CCFBF1"];
+    deploy [
+      label="Inference with exact reads\nfull-strength noise per read\n(shared read state for chunked large images)",
+      fillcolor="#99F6E4"
+    ];
+    report [label="Export metrics, figures, configuration,\nand reproducible command", fillcolor="#CCFBF1"];
+    end [shape=ellipse, label="End", fillcolor="#E2E8F0"];
+  }
+
+  start -> load;
+  load -> convert;
+  convert -> classify;
+  classify -> calibrate;
+  calibrate -> assign;
+  assign -> batch;
+  batch -> forward;
+  forward -> online [style=dashed, label="when enabled"];
+  forward -> loss;
+  online -> loss [style=dashed];
+  loss -> backward [color="#B45309"];
+  backward -> finite [color="#B45309"];
+  finite -> stopbad [label="no", color="#DC2626"];
+  finite -> update [label="yes", color="#B45309"];
+  update -> more;
+  more -> batch [label="yes", color="#15803D"];
+  more -> checkpoint [label="no"];
+  checkpoint -> evaluate;
+  evaluate -> aggregate;
+  aggregate -> diagnose;
+  diagnose -> revise [label="no", color="#BE185D"];
+  revise -> assign [label="bounded revision", color="#BE185D"];
+  diagnose -> freeze [label="yes", color="#0F766E"];
+  freeze -> deploy;
+  deploy -> report;
+  report -> end;
+}

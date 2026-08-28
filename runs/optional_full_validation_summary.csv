@@ -1,0 +1,3 @@
+task,dataset,model,metric,clean_percent,direct_noisy_percent,ste_percent,recovery_pp,protocol,noise_scale,noisy_eval_seed,train_epochs,eval_examples
+detection,VOC2007,Faster R-CNN,mAP50,72.58625105023384,28.719685077667233,37.53279767930508,8.813112601637844,shared-read uniform noise,1.0,89,1,2510
+segmentation,VOC2012,DeepLabV3,mIoU,71.30971285354887,4.029713368306995,6.457056078915062,2.427342710608067,shared-read uniform noise,1.0,89,1,1449

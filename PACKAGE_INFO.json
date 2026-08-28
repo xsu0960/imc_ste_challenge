@@ -1,0 +1,12 @@
+{
+  "name": "IMC STE Challenge submission",
+  "author": "Xin Su",
+  "built_utc": "2026-08-28T15:30:14.037057+00:00",
+  "source_files": 122,
+  "policy": {
+    "included": "source, configs, tests, English paper, release documentation, referenced figures, canonical result tables",
+    "excluded": "datasets, checkpoints, JSONL logs, caches, drafts, research notes, checklists, intermediate experiments, build outputs",
+    "checkpoint_included": false
+  },
+  "verification": "python scripts/verify_project.py --package-mode"
+}

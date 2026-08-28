@@ -1,0 +1,35 @@
+seed: 42
+device: auto
+
+model:
+  name: resnet18
+  num_classes: 200
+  cifar_stem: false
+  weights: imagenet
+
+training:
+  batch_size: 128
+  image_size: 224
+  epochs: 30
+  learning_rate: 0.01
+  momentum: 0.9
+  weight_decay: 0.0001
+  label_smoothing: 0.1
+  lr_scheduler: cosine
+  augmentation: autoaugment
+  num_workers: 4
+
+noise:
+  prog_noise_std: 0.01
+  drift_factor: 0.005
+  nonlinear_alpha: 0.1
+  nonlinear_beta: 0.05
+  output_noise_std: 0.01
+  quantization_bits: 8
+  crosstalk_factor: 0.002
+  temperature_factor: 0.001
+  retention_loss: 0.001
+  supply_variation_std: 0.01
+  gradient_floor: 0.1
+  gradient_scale_eps: 1.0e-6
+  gradient_scale_clip: 4.0

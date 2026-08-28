@@ -1,0 +1,10 @@
+section,task,metric,clean_percent,baseline_percent,candidate_percent,delta_pp,retained_clean_percent,ci95_pp,p_value,decision,protocol
+mandatory_classification,CIFAR-10 + ResNet18,accuracy,95.62,61.419999999999995,90.62599999999999,29.206,94.77724325454925,,,main_result,ste_lr0p001_twostage
+mandatory_classification,CIFAR-10 + EfficientNet-B0,accuracy,91.13,38.93,86.122,47.192,94.50455393394053,,,main_result,sat_aware_ste_twostage
+mandatory_classification,CIFAR-100 + ResNet18,accuracy,78.32000000000001,62.976,69.96,6.984000000000002,89.32584269662921,,,main_result,adaptive_sat_aware_ste_lr0p001_twostage
+mandatory_classification,CIFAR-100 + EfficientNet-B0,accuracy,71.14,27.764,61.602000000000004,33.838,86.59263424233905,,,main_result,ste_lr0p001_twostage
+mandatory_classification,TinyImageNet + ResNet18 ImageNet-224,accuracy,71.6,53.833,58.07,4.237000000000002,81.10335195530726,,,main_result,sat_aware_ste_lr0p0005_10ep300b
+mandatory_classification,TinyImageNet + EfficientNet-B0 ImageNet-224,accuracy,81.0,0.5,76.304,75.804,94.20246913580247,0.247,,main_result,activation_preconditioned_ste_pw_dw_read8_5seed_mean
+optional_full_val,VOC2007 + Faster R-CNN,mAP50,72.58625105023384,28.719685077667233,37.53279767930508,8.813112601637844,51.70786083624878,,,mechanism_validation,"shared-read uniform noise, one full epoch"
+optional_full_val,VOC2012 + DeepLabV3,mIoU,71.30971285354887,4.029713368306995,6.457056078915062,2.427342710608067,9.054946122383262,,,mechanism_validation,"shared-read uniform noise, one full epoch"
+optional_paired_extension,VOC2012 + DeepLabV3 online extension,mIoU,,6.4991798859780285,6.744601077466981,0.24542119148895214,,0.09871614189202048,0.008626439085214951,significant,3-seed paired evaluation

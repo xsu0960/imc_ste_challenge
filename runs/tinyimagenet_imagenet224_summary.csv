@@ -1,0 +1,15 @@
+task,protocol,eval_mode,clean_accuracy,repeat_mean,ci95,notes
+TinyImageNet + ResNet18 ImageNet-224,clean eval,clean,0.71600,,,15-epoch ImageNet-pretrained fine-tune; best checkpoint runs/1783582485_tinyimagenet_clean_seed1_best.pt.
+TinyImageNet + ResNet18 ImageNet-224,clean checkpoint noisy eval,noise,,0.53833,0.00261,Direct noisy deployment of the clean checkpoint.
+TinyImageNet + ResNet18 ImageNet-224,sat-aware STE fine-tune,noise,,0.58070,0.00526,10-epoch 300-batch sat-aware STE fine-tune with lr=0.0005; +4.24 pp over clean noisy baseline.
+TinyImageNet + EfficientNet-B0 ImageNet-224,clean eval,clean,0.81000,,,10-epoch ImageNet-pretrained fine-tune; best checkpoint runs/1783584188_tinyimagenet_clean_seed1_best.pt.
+TinyImageNet + EfficientNet-B0 ImageNet-224,clean checkpoint noisy eval,noise,,0.00500,0.00060,Direct noisy deployment collapses near random because pointwise/depthwise middle layers are highly noise-sensitive.
+TinyImageNet + EfficientNet-B0 ImageNet-224,strict uniform STE fine-tune,noise,,0.25236,0.00324,10-epoch 300-batch plain STE fine-tune with lr=0.0005 and noise_scale=1.0; +24.74 pp over direct strict noisy baseline.
+TinyImageNet + EfficientNet-B0 ImageNet-224,strict uniform STE + all-layer read 8,noise,,0.41580,,Full validation of runs/1783699432_tinyimagenet_ste_seed1_best.pt with layer-read repeats 8.
+TinyImageNet + EfficientNet-B0 ImageNet-224,strict uniform read-adapt + all-layer read 8,noise,,0.42610,,Full validation of runs/1783714685_tinyimagenet_ste_seed46_best.pt with layer-read repeats 8.
+TinyImageNet + EfficientNet-B0 ImageNet-224,strict uniform pointwise/depthwise read-aware + p/d read 8,noise,,0.43780,,Full validation of runs/1783716425_tinyimagenet_ste_seed48_best.pt with pointwise/depthwise read repeats 8.
+TinyImageNet + EfficientNet-B0 ImageNet-224,strict activation-preconditioned STE + p/d read 8,noise,,0.76304,0.00247,Five-noise-seed full-validation mean of runs/1783732669_tinyimagenet_ste_seed54_best.pt; clean-stat target=4 activation preconditioning; p/d read4 training and read8 eval; single-read noise remains noise_scale=1.0.
+TinyImageNet + EfficientNet-B0 ImageNet-224,constrained learned activation scale + p/d read 8,noise,,0.76367,0.00143,Three-noise-seed full-validation mean; paired delta +0.09 pp versus fixed scales with p=0.247 so the trend is not statistically significant.
+TinyImageNet + EfficientNet-B0 ImageNet-224,output-compensated adaptive p/d read 4-8,noise,,0.76203,0.00051,Three-noise-seed full-validation mean; 477 versus 640 sensitive-layer reads (-25.5%); paired delta -0.073 pp with p=0.568.
+TinyImageNet + EfficientNet-B0 ImageNet-224,depthwise-clean noisy eval,dw_clean_noise,,0.00477,0.00043,Depthwise-only adaptation is insufficient without pointwise/linear calibration.
+TinyImageNet + EfficientNet-B0 ImageNet-224,layerwise calibrated depthwise-clean noisy eval,dw_clean_noise,,0.80093,0.00122,Pointwise noise scale 0.05 and linear noise scale 0.1; 16 depthwise, 64 pointwise, and 1 linear layers calibrated.
