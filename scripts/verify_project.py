@@ -19,6 +19,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_ARTIFACTS = (
     "README.md",
+    "README_EN.md",
     "pyproject.toml",
     "environment.yml",
     "docs/algorithm_architecture_and_workflow.md",
@@ -43,6 +44,7 @@ REQUIRED_ARTIFACTS = (
 IMPORTS = ("torch", "torchvision", "numpy", "PIL", "matplotlib", "scipy", "yaml", "imc_ste")
 RELEASE_TEXT_FILES = (
     "README.md",
+    "README_EN.md",
     "docs/algorithm_architecture_and_workflow.md",
     "docs/final_report.md",
     "docs/submission_readme.md",
@@ -196,8 +198,11 @@ def check_release_documents(project_root: Path) -> dict[str, int | str]:
         checked += 1
 
     readme = (project_root / "README.md").read_text(encoding="utf-8")
+    readme_en = (project_root / "README_EN.md").read_text(encoding="utf-8")
     paper = (project_root / "paper" / "main.tex").read_text(encoding="utf-8")
-    if "**Author:** Xin Su" not in readme:
+    if "**作者：Xin Su**" not in readme:
+        raise ValueError("Chinese release README does not identify Xin Su as author")
+    if "**Author:** Xin Su" not in readme_en:
         raise ValueError("release README does not identify Xin Su as author")
     if r"\author{Xin Su}" not in paper:
         raise ValueError("paper source does not identify Xin Su as author")

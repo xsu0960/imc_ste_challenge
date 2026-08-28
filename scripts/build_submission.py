@@ -20,6 +20,7 @@ ROOT_FILES = (
     ".gitignore",
     ".submissionignore",
     "README.md",
+    "README_EN.md",
     "environment.yml",
     "pyproject.toml",
 )
@@ -59,6 +60,7 @@ RESULT_FILES = (
 )
 PUBLIC_MARKDOWN_FILES = (
     "README.md",
+    "README_EN.md",
     "docs/algorithm_architecture_and_workflow.md",
     "docs/final_report.md",
     "docs/submission_readme.md",
@@ -206,7 +208,7 @@ def collect_entries(
 ) -> dict[str, tuple[Path, str]]:
     validate_release_text(project_root)
     entries: dict[str, tuple[Path, str]] = {}
-    root_files = ("README.md",) if documents_only else ROOT_FILES
+    root_files = ("README.md", "README_EN.md") if documents_only else ROOT_FILES
     for relative in root_files:
         add_file(entries, project_root, relative, "project")
     for relative in DOC_FILES:
