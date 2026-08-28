@@ -6,18 +6,20 @@
 
 令噪声训练目标为
 
-$$
+```math
 F(\theta)=\mathbb{E}_{(x,y),\zeta}
-\left[\ell\left(f_{\zeta}(x;\theta),y\right)\right],
-\tag{1}
-$$
+\left[\ell\left(f_{\zeta}(x;\theta),y\right)\right]
+```
+
+<p align="right"><em>式（1）</em></p>
 
 其中 $\theta$ 为网络参数，$\zeta$ 表示编程、漂移、保持、温度、串扰、供电、输出读噪声和量化等随机或非光滑非理想因素。第 $t$ 步使用 surrogate gradient $\hat g_t$ 更新
 
-$$
-\theta_{t+1}=\theta_t-\eta\hat g_t.
-\tag{2}
-$$
+```math
+\theta_{t+1}=\theta_t-\eta\hat g_t
+```
+
+<p align="right"><em>式（2）</em></p>
 
 | 符号 | 含义 |
 | --- | --- |
@@ -35,48 +37,55 @@ $$
 
 量化和随机采样使真实路径不可导或梯度方差过大。框架令 forward 使用严格噪声算子，backward 使用理想矩阵乘或饱和感知 surrogate。条件于当前参数，定义
 
-$$
-\mathbb{E}_t[\hat g_t]=\nabla F(\theta_t)+b_t,
-\qquad
-\mathbb{E}_t\!\left[\left\|\hat g_t-
-\mathbb{E}_t[\hat g_t]\right\|^2\right]\leq\sigma_g^2.
-\tag{3}
-$$
+```math
+\begin{aligned}
+\mathbb{E}_t[\hat g_t] &= \nabla F(\theta_t)+b_t, \\
+\mathbb{E}_t\!\left[\left\|\hat g_t-\mathbb{E}_t[\hat g_t]\right\|^2\right]
+&\leq \sigma_g^2.
+\end{aligned}
+```
+
+<p align="right"><em>式（3）</em></p>
 
 均方梯度估计误差可分解为
 
-$$
+```math
+\begin{aligned}
 \mathbb{E}_t\!\left[\left\|\hat g_t-\nabla F(\theta_t)\right\|^2\right]
-=\|b_t\|^2+
-\mathbb{E}_t\!\left[\left\|\hat g_t-
-\mathbb{E}_t[\hat g_t]\right\|^2\right].
-\tag{4}
-$$
+=\|b_t\|^2
++\mathbb{E}_t\!\left[\left\|\hat g_t-\mathbb{E}_t[\hat g_t]\right\|^2\right].
+\end{aligned}
+```
+
+<p align="right"><em>式（4）</em></p>
 
 式 (4) 解释了本项目为何同时估计系统偏差和随机方差。仅增加读出次数主要降低独立随机项，不能消除由非线性饱和、量化阈值和尺度失配引起的系统偏差。
 
 对通道 $c$ 的 paired clean/noisy 输出 $y_c,\tilde y_c$，令 $e_c=\tilde y_c-y_c$。在线 profile 用信号投影分离两部分：
 
-$$
-\rho_{b,c}^2=
-\frac{\langle y_c,e_c\rangle^2}{\langle y_c,y_c\rangle^2},
-\qquad
-\rho_{v,c}^2=
-\frac{\|e_c\|^2-
-\langle y_c,e_c\rangle^2/\|y_c\|^2}{\|y_c\|^2}.
-\tag{5}
-$$
+```math
+\begin{aligned}
+\rho_{b,c}^2
+&=\frac{\langle y_c,e_c\rangle^2}{\langle y_c,y_c\rangle^2}, \\
+\rho_{v,c}^2
+&=\frac{\|e_c\|^2-\langle y_c,e_c\rangle^2/\|y_c\|^2}{\|y_c\|^2}.
+\end{aligned}
+```
+
+<p align="right"><em>式（5）</em></p>
 
 实现中对式 (5) 使用 batch/空间维均值、数值下限和 EMA，并设置
 
-$$
-d_c=\operatorname{clip}\!\left(
-\left(1+\lambda_v\rho_{v,c}^2+
-\lambda_b\rho_{b,c}^2\right)^{-1/2},
-d_{\min},1\right),
-\qquad \hat g_t=D_tg_t^{\mathrm{STE}}.
-\tag{6}
-$$
+```math
+\begin{aligned}
+d_c &= \operatorname{clip}\!\left(
+\left(1+\lambda_v\rho_{v,c}^2+\lambda_b\rho_{b,c}^2\right)^{-1/2},
+d_{\min},1\right), \\
+\hat g_t &= D_tg_t^{\mathrm{STE}}.
+\end{aligned}
+```
+
+<p align="right"><em>式（6）</em></p>
 
 式 (6) 不是把物理噪声调小，而是对 backward 的可信度做有界校正；forward 仍使用原始 `noise_scale=1.0`。
 
@@ -84,19 +93,20 @@ $$
 
 因为 $d_c\in[d_{\min},1]$，对任意向量 $g$ 有
 
-$$
-d_{\min}\|g\|_2\leq\|D_tg\|_2\leq\|g\|_2.
-\tag{7}
-$$
+```math
+d_{\min}\|g\|_2\leq\|D_tg\|_2\leq\|g\|_2
+```
+
+<p align="right"><em>式（7）</em></p>
 
 上界抑制高方差通道，下界避免强噪声通道被完全屏蔽。若未缩放估计器的偏差上界为 $B_0$，且 $\|\nabla F(\theta_t)\|\leq G$，则缩放后偏差可保守界为
 
-$$
-\left\|\mathbb{E}_t[D_tg_t^{\mathrm{STE}}]-
-\nabla F(\theta_t)\right\|
-\leq B_0+(1-d_{\min})G.
-\tag{8}
-$$
+```math
+\left\|\mathbb{E}_t[D_tg_t^{\mathrm{STE}}]-\nabla F(\theta_t)\right\|
+\leq B_0+(1-d_{\min})G
+```
+
+<p align="right"><em>式（8）</em></p>
 
 式 (8) 表明缩放不能无限增强：过低的 floor 虽可减少方差，也会增加优化偏差。本项目因此使用 0.5 的在线 floor，并以多 seed 配对统计评价方法，而不依据单 seed 峰值作结论。
 
@@ -113,14 +123,15 @@ $$
 $\mathbb{E}_t\|\hat g_t\|^2\leq
 2\|\nabla F(\theta_t)\|^2+2B^2+\sigma_g^2$，可得
 
-$$
-\frac{1}{T}\sum_{t=0}^{T-1}
-\mathbb{E}\|\nabla F(\theta_t)\|^2
-\leq
-\frac{2(F(\theta_0)-F_*)}{\eta T}
-+2(1+L\eta)B^2+L\eta\sigma_g^2.
-\tag{9}
-$$
+```math
+\begin{aligned}
+\frac{1}{T}\sum_{t=0}^{T-1}\mathbb{E}\|\nabla F(\theta_t)\|^2
+\leq {}& \frac{2(F(\theta_0)-F_*)}{\eta T} \\
+&+2(1+L\eta)B^2+L\eta\sigma_g^2.
+\end{aligned}
+```
+
+<p align="right"><em>式（9）</em></p>
 
 当估计器无偏，即 $B=0$，选择 $\eta=\mathcal{O}(T^{-1/2})$ 可恢复非凸随机优化常见的 $\mathcal{O}(T^{-1/2})$ 平均驻点界。对有偏 STE，算法收敛到由 $B^2$ 控制的邻域。在线 bias/variance profile、饱和感知修正和激活预条件的目标，分别是降低式 (9) 中的 $B$、$\sigma_g^2$，或避免 forward 进入导致二者增大的强饱和区域。
 
@@ -130,12 +141,13 @@ $$
 
 对矩阵乘 $[R,I]\times[I,O]$，主计算量为 $\Theta(RIO)$。卷积可取
 
-$$
-R=NH_oW_o,\quad
-I=C_{in}k_hk_w/G,\quad
-O=C_{out}/G,
-\tag{10}
-$$
+```math
+R=NH_oW_o,\qquad
+I=C_{\mathrm{in}}k_hk_w/G,\qquad
+O=C_{\mathrm{out}}/G
+```
+
+<p align="right"><em>式（10）</em></p>
 
 并对 $G$ 个 group 求和，因此与标准 grouped convolution 具有相同的渐近 MAC 复杂度。
 
@@ -150,10 +162,11 @@ $$
 `NoisyConv2d` 的完整 unfold workspace 为
 $\mathcal{O}(NH_oW_oC_{in}k_hk_w)$。若每次只处理 $h_c$ 个输出行，峰值 workspace 降为
 
-$$
-\mathcal{O}(Nh_cW_oC_{in}k_hk_w),
-\tag{11}
-$$
+```math
+\mathcal{O}(Nh_cW_oC_{\mathrm{in}}k_hk_w)
+```
+
+<p align="right"><em>式（11）</em></p>
 
 计算量不变。shared-read 实现让同一次物理读出的权重侧随机状态跨 chunk 复用，因此 $h_c$ 只控制内存，不再隐式改变物理噪声采样次数。
 

@@ -167,7 +167,10 @@ def check_report(project_root: Path) -> dict[str, int]:
     missing = [name for name in images if not (project_root / "docs" / "figures" / name).is_file()]
     if missing:
         raise FileNotFoundError("formal report references missing figures: " + ", ".join(missing))
-    equation_numbers = [int(value) for value in re.findall(r"\\tag\{(\d+)\}", report)]
+    equation_numbers = [
+        int(value)
+        for value in re.findall(r"<em>式（(\d+)）</em>", report)
+    ]
     expected = list(range(1, 15))
     if equation_numbers != expected:
         raise ValueError(

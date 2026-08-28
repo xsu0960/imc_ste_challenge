@@ -36,16 +36,23 @@
 
 对理想矩阵乘 $Y=XW$，框架在前向传播中引入权重扰动、输入相关扰动、非线性、量化和输出扰动，得到噪声输出：
 
-$$
-\tilde{Y} = Q_b(f(X, W + \Delta W)) + \Delta Y. \tag{1}
-$$
+```math
+\tilde{Y} = Q_b\!\left(f(X, W + \Delta W)\right) + \Delta Y
+```
+
+<p align="right"><em>式（1）</em></p>
 
 其中 $Q_b$ 表示 bit-width 量化，$\Delta W$ 覆盖 programming noise、drift、retention loss 和 temperature variation，$\Delta Y$ 覆盖 output noise、crosstalk 和 supply variation。非线性使用正负不对称饱和函数：
 
-$$
-f(z)=\begin{cases}\tanh(\alpha z)/\alpha,&z\ge 0\\
-\tanh((\alpha+\beta)z)/(\alpha+\beta),&z<0\end{cases}. \tag{2}
-$$
+```math
+f(z)=
+\begin{cases}
+\tanh(\alpha z)/\alpha, & z\ge 0, \\
+\tanh((\alpha+\beta)z)/(\alpha+\beta), & z<0.
+\end{cases}
+```
+
+<p align="right"><em>式（2）</em></p>
 
 卷积层通过 unfold 将局部 patch 转换为矩阵乘。对 grouped/depthwise convolution，框架使用 grouped matmul 路径，避免将不同 group 的权重混合。
 
@@ -53,24 +60,38 @@ $$
 
 由于 noisy forward 包含量化和随机扰动，直接 autograd 容易出现零梯度或高方差梯度。标准 STE 在 backward 中使用理想矩阵乘的 surrogate gradient：
 
-$$
-\frac{\partial L}{\partial X} \approx \frac{\partial L}{\partial \tilde{Y}} W^T,
-\quad
-\frac{\partial L}{\partial W} \approx X^T \frac{\partial L}{\partial \tilde{Y}}. \tag{3}
-$$
+```math
+\begin{aligned}
+\frac{\partial L}{\partial X}
+&\approx \frac{\partial L}{\partial \tilde{Y}}W^T, \\
+\frac{\partial L}{\partial W}
+&\approx X^T\frac{\partial L}{\partial \tilde{Y}}.
+\end{aligned}
+```
+
+<p align="right"><em>式（3）</em></p>
 
 在此基础上，`sat_aware_ste` 引入饱和感知缩放，降低大幅激活/权重区域的梯度不稳定性：
 
-$$
-g_\text{sat}=g_\text{ste}\cdot s(X,W). \tag{4}
-$$
+```math
+g_{\mathrm{sat}}=g_{\mathrm{STE}}\cdot s(X,W)
+```
+
+<p align="right"><em>式（4）</em></p>
 
 `adaptive_sat_aware_ste` 进一步根据局部响应尺度归一化缩放系数。新增的方差感知模式把逐层测得的随机误差比 $r_{v,l}$、系统偏差比 $r_{b,l}$ 和读出次数 $K_l$ 接入 backward：
 
-$$
-c_l=\max\left(c_{\min},\left(1+\lambda_v r_{v,l}^2/K_l+\lambda_b r_{b,l}^2\right)^{-1/2}\right),
-\quad g_l=c_l g_{\mathrm{STE}}. \tag{5}
-$$
+```math
+\begin{aligned}
+c_l &= \max\!\left(
+c_{\min},
+\left(1+\lambda_v r_{v,l}^2/K_l+\lambda_b r_{b,l}^2\right)^{-1/2}
+\right), \\
+g_l &= c_l g_{\mathrm{STE}}.
+\end{aligned}
+```
+
+<p align="right"><em>式（5）</em></p>
 
 该机制支持普通卷积、depthwise、pointwise 和 linear 使用不同统计与强度。消融结果显示，它显著稳定梯度范数，但在本轮 TinyImageNet 最优设置中没有超过更简单的 plain STE，因此作为完整框架能力和负结果保留。
 
@@ -78,10 +99,14 @@ $$
 
 逐层分解表明，TinyImageNet EfficientNet-B0 的主要误差不是纯随机方差，而是大幅 pre-BN MAC 输出与非线性饱和耦合产生的系统偏差。对第 $l$ 层，从 clean checkpoint 统计 MAC 输出绝对值的 P99 $q_l$，设置
 
-$$
-a_l=\operatorname{clip}(\tau/q_l,a_{\min},1),\qquad
-\tilde{Y}_l=a_l^{-1}\mathcal{N}(a_l X_l,W_l). \tag{6}
-$$
+```math
+\begin{aligned}
+a_l &= \operatorname{clip}(\tau/q_l,a_{\min},1), \\
+\tilde{Y}_l &= a_l^{-1}\mathcal{N}(a_l X_l,W_l).
+\end{aligned}
+```
+
+<p align="right"><em>式（6）</em></p>
 
 其中 $\tau=4$，只对 depthwise/pointwise 层启用。在无噪声线性极限下，该变换严格保持 $X_lW_l$；每次 noisy MAC 的噪声参数仍为原始 `noise_scale=1.0`。与缩小权重后再放大输出不同，输入缩放不会在一阶近似下放大 additive programming noise，但会放大较小的输出端噪声，因而需要通过验证选择 $a_{\min}$。
 
@@ -89,16 +114,22 @@ $$
 
 固定 P99 缩放基础上，将实际发生预条件的 50 层改写为有界参数：
 
-$$
-a_l=a_{\min}+(a_{\max}-a_{\min})\sigma(\theta_l),\qquad
-R_a=\frac{1}{L}\sum_l(\log a_l-\log a_l^{(0)})^2. \tag{7}
-$$
+```math
+\begin{aligned}
+a_l &= a_{\min}+(a_{\max}-a_{\min})\sigma(\theta_l), \\
+R_a &= \frac{1}{L}\sum_l\left(\log a_l-\log a_l^{(0)}\right)^2.
+\end{aligned}
+```
+
+<p align="right"><em>式（7）</em></p>
 
 其中 $a_l^{(0)}$ 为统计初始化，$a_{\min}=0.1$、$a_{\max}=1$。约束和对数正则防止缩放偏离已验证的线性区间。由于输出反缩放会使 additive output noise 方差按 $1/a_l^2$ 增长，框架进一步分配
 
-$$
-K_l=\operatorname{clip}(\lceil K_0/a_l^2\rceil,K_0,K_{\max}). \tag{8}
-$$
+```math
+K_l=\operatorname{clip}\!\left(\left\lceil K_0/a_l^2\right\rceil,K_0,K_{\max}\right)
+```
+
+<p align="right"><em>式（8）</em></p>
 
 次真实独立读出。本轮效率点使用 $K_0=4$、$K_{\max}=8$。每次读出的 `noise_scale` 仍为 1.0；该策略改变采样预算，不改变物理噪声幅度。
 
@@ -136,42 +167,57 @@ ResNet18 主要由普通卷积和线性层组成，统一噪声模型即可完�
 
 令 $\hat g_t$ 为第 $t$ 步 STE gradient，并定义条件偏差和方差：
 
-$$
-\mathbb{E}_t[\hat g_t]=\nabla F(\theta_t)+b_t,
-\qquad
-\mathbb{E}_t\|\hat g_t-\mathbb{E}_t\hat g_t\|^2\leq\sigma_g^2. \tag{9}
-$$
+```math
+\begin{aligned}
+\mathbb{E}_t[\hat g_t] &= \nabla F(\theta_t)+b_t, \\
+\mathbb{E}_t\!\left[\left\|\hat g_t-\mathbb{E}_t\hat g_t\right\|^2\right]
+&\leq \sigma_g^2.
+\end{aligned}
+```
+
+<p align="right"><em>式（9）</em></p>
 
 其均方估计误差由系统偏差和随机方差组成：
 
-$$
-\mathbb{E}_t\|\hat g_t-\nabla F(\theta_t)\|^2
-=\|b_t\|^2+
-\mathbb{E}_t\|\hat g_t-\mathbb{E}_t\hat g_t\|^2. \tag{10}
-$$
+```math
+\begin{aligned}
+\mathbb{E}_t\!\left[\left\|\hat g_t-\nabla F(\theta_t)\right\|^2\right]
+=\|b_t\|^2
++\mathbb{E}_t\!\left[\left\|\hat g_t-\mathbb{E}_t\hat g_t\right\|^2\right].
+\end{aligned}
+```
+
+<p align="right"><em>式（10）</em></p>
 
 在线 profile 产生对角缩放 $D_t$，每个通道满足 $d_c\in[d_{\min},1]$，因此
 
-$$
-d_{\min}\|g\|_2\leq\|D_tg\|_2\leq\|g\|_2. \tag{11}
-$$
+```math
+d_{\min}\|g\|_2\leq\|D_tg\|_2\leq\|g\|_2
+```
+
+<p align="right"><em>式（11）</em></p>
 
 这使高方差通道的梯度不会被放大，同时由 floor 防止梯度完全消失。若 $F$ 为 $L$-smooth 且下界为 $F_*$，$\|b_t\|\leq B$，并取固定步长 $0<\eta\leq1/(4L)$，则标准 smoothness 推导给出
 
-$$
+```math
+\begin{aligned}
 \frac{1}{T}\sum_{t=0}^{T-1}\mathbb{E}\|\nabla F(\theta_t)\|^2
-\leq
-\frac{2(F(\theta_0)-F_*)}{\eta T}
-+2(1+L\eta)B^2+L\eta\sigma_g^2. \tag{12}
-$$
+\leq {}& \frac{2(F(\theta_0)-F_*)}{\eta T} \\
+&+2(1+L\eta)B^2+L\eta\sigma_g^2.
+\end{aligned}
+```
+
+<p align="right"><em>式（12）</em></p>
 
 当 $B=0$ 且 $\eta=\mathcal{O}(T^{-1/2})$ 时，式 (12) 恢复 $\mathcal{O}(T^{-1/2})$ 的非凸随机优化平均驻点界 [5]；有偏 STE 则收敛到由 $B^2$ 控制的邻域。该结果解释了饱和修正、激活预条件和在线 bias/variance profile 分别降低偏差或方差的目标，但不直接保证分类精度。当前 $D_t$ 与同一 batch 的 noisy forward 存在相关性，严格自适应证明还需要额外稳定性条件，因此算法有效性仍以配对多 seed 结果判断。完整推导见 `docs/theory_and_complexity.md`。
 
 对 $[R,I]\times[I,O]$ 矩阵乘，clean/noisy/STE 的主阶时间均为 $\Theta(RIO)$；严格 $K$ 读为 $\Theta(KRIO)$，在线 profile 为两次 forward 加一次 backward，渐近阶不变但常数增大。卷积 full-unfold workspace 为 $\mathcal{O}(NH_oW_oC_{in}k_hk_w)$；按 $h_c$ 个输出行分块后降为
 
-$$
-\mathcal{O}(Nh_cW_oC_{in}k_hk_w). \tag{13}
-$$
+```math
+\mathcal{O}(Nh_cW_oC_{\mathrm{in}}k_hk_w)
+```
+
+<p align="right"><em>式（13）</em></p>
 
 shared-read 使权重侧状态跨 chunk 复用，故分块只改变峰值内存，不改变物理噪声语义。在线 profile 的额外持久状态为每层 $\mathcal{O}(C_{out})$，推理阶段不启用 profile，因此没有额外推理成本。
 
@@ -344,9 +390,14 @@ ResNet18 与 EfficientNet-B0 分别遵循文献 [8,9] 的经典结构；optional
 
 在线 profile 在训练 batch 内执行配对 clean/noisy 前向。对输出通道 $c$，残差先投影到 clean signal 以估计系统增益偏差 $b_c$，正交分量给出随机方差 $v_c$；EMA 统计映射为有界 surrogate scale：
 
-$$
-s_c=\operatorname{clip}\left((1+\lambda_v v_c+\lambda_b b_c^2)^{-1/2}, s_{\min},1\right). \tag{14}
-$$
+```math
+s_c=\operatorname{clip}\!\left(
+\left(1+\lambda_v v_c+\lambda_b b_c^2\right)^{-1/2},
+s_{\min},1
+\right)
+```
+
+<p align="right"><em>式（14）</em></p>
 
 三种子配对结果来自 `runs/optional_paired_extension_summary.csv`：
 
